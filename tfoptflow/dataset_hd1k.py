@@ -65,8 +65,8 @@ class HD1KDataset(OpticalFlowDataset):
 
         self._trn_lbl_dir = self._ds_root + '/hd1k_flow_gt/flow_' + self.opts['type']
         self._val_lbl_dir = self._trn_lbl_dir
-        self._val_pred_lbl_dir = self._ds_root + '/hd1k_flow_gt/flow_' + self.opts['type'] + '_pred'
-        self._tst_pred_lbl_dir = self._ds_root + '/hd1k_challenge_flow_' + self.opts['type'] + '_pred'
+        self._val_pred_lbl_dir = self._ds_root + '/hd1k_flow_gt/flow_' + self.opts['type'] + '_pred_tf'
+        self._tst_pred_lbl_dir = self._ds_root + '/hd1k_challenge_flow_' + self.opts['type'] + '_pred_tf'
 
     def _build_ID_sets(self):
         """Build the list of samples and their IDs, split them in the proper datasets.
@@ -77,26 +77,52 @@ class HD1KDataset(OpticalFlowDataset):
         For the test dataset, they look like ('000000_10.png', '00000_11.png', '000000_10.flo')
         """
         # Search the train folder for the samples, create string IDs for them
-        frames = sorted(os.listdir(self._trn_dir))
-        self._IDs, idx = [], 0
-        while idx < len(frames) - 1:
-            self._IDs.append((frames[idx], frames[idx + 1], frames[idx]))
-            idx += 2
+        data_path = Path(self._trn_dir)
+        h = set()
+        for file_name in tqdm(list((data_path).glob('*'))):
+            series, num = file_name.stem.split("_")
+            h.add(series)
+
+        self._IDs = []
+        for i in h:
+            frames = sorted(list((data_path).glob('{}*'.format(i))))
+            idx = 0
+            while idx < len(frames) - 1:
+                self._IDs.append((frames[idx].name, frames[idx + 1].name, frames[idx].name))
+                idx += 1
+        # frames = sorted(os.listdir(self._trn_dir))
+        # self._IDs, idx = [], 0
+        # while idx < len(frames) - 1:
+        #     self._IDs.append((frames[idx], frames[idx + 1], frames[idx]))
+        #     idx += 2
 
         # Build the train/val datasets
         if self.opts['val_split'] > 0.:
             self._trn_IDs, self._val_IDs = train_test_split(self._IDs, test_size=self.opts['val_split'],
                                                             random_state=self.opts['random_seed'])
         else:
-            self._trn_IDs, self._val_IDs = self._IDs, None
+            self._trn_IDs, self._val_IDs = self._IDs, []
 
         # Build the test dataset
-        self._tst_IDs, idx = [], 0
-        frames = sorted(os.listdir(self._tst_dir))
-        while idx < len(frames) - 1:
-            flow_ID = frames[idx].replace('.png', '.flo')
-            self._tst_IDs.append((frames[idx], frames[idx + 1], flow_ID))
-            idx += 2
+        data_path = Path(self._tst_dir)
+        h_tst = set()
+        for file_name in tqdm(list((data_path).glob('*'))):
+            series, num = file_name.stem.split("_")
+            h_tst.add(series)
+
+        self._tst_IDs = []
+        for i in h_tst:
+            frames = sorted(list((data_path).glob('{}*'.format(i))))
+            idx = 0
+            while idx < len(frames) - 1:
+                self._tst_IDs.append((frames[idx].name, frames[idx + 1].name, frames[idx].name))
+                idx += 1
+        # self._tst_IDs, idx = [], 0
+        # frames = sorted(os.listdir(self._tst_dir))
+        # while idx < len(frames) - 1:
+        #     flow_ID = frames[idx].replace('.png', '.flo')
+        #     self._tst_IDs.append((frames[idx], frames[idx + 1], flow_ID))
+        #     idx += 2
 
         self._trn_IDs_simpl = self.simplify_IDs(self._trn_IDs)
         self._val_IDs_simpl = self.simplify_IDs(self._val_IDs)

@@ -4,6 +4,7 @@ import random
 import os 
 import json
 # import cv2
+from functools import reduce
 from pathlib import Path
 from tqdm import tqdm
 from flowlib import evaluate_flow_file
@@ -30,7 +31,8 @@ def convert(ground_truth_folder, predicted_folder):
     average_pe = evaluate_flow_file(i, predicted_path)
     err_list.append(average_pe)
 
-  reduce(lambda x, y: x + y, err_list) / len(err_list)
+  res reduce(lambda x, y: x + y, err_list) / len(err_list)
+  print(res)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()

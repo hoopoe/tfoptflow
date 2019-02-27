@@ -31,7 +31,7 @@ def convert(ground_truth_folder, predicted_folder):
     average_pe = evaluate_flow_file(i, predicted_path)
     err_list.append(average_pe)
 
-  res reduce(lambda x, y: x + y, err_list) / len(err_list)
+  res = reduce(lambda x, y: x + y, err_list) / len(err_list)
   print(res)
 
 if __name__ == "__main__":
